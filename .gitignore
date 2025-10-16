@@ -1,0 +1,4 @@
+asl_rf_model.pkl
+__pycache__/
+*.pyc
+.venv/
