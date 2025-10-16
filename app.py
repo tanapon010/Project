@@ -5,19 +5,62 @@ import numpy as np
 import joblib
 import mediapipe as mp
 import time
+import requests
 from flask import Flask, send_file, request, jsonify, render_template, session
+from tqdm import tqdm
 
 app = Flask(__name__, static_folder='static', template_folder='src')
 
 # In a production environment, this should be a complex, securely stored value.
 app.secret_key = 'super-secret-key'
 
+# --- Model and Asset Download ---
+def download_file(url, filename):
+    """Downloads a file from a URL if it doesn't exist, with a progress bar."""
+    if not os.path.exists(filename):
+        print(f"'{filename}' not found. Downloading from {url}...")
+        try:
+            response = requests.get(url, stream=True)
+            response.raise_for_status()  # Raise an exception for bad status codes
+
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024  # 1 Kilobyte
+
+            with open(filename, 'wb') as f, tqdm(
+                total=total_size, unit='iB', unit_scale=True, desc=f"Downloading {filename}"
+            ) as pbar:
+                for data in response.iter_content(block_size):
+                    pbar.update(len(data))
+                    f.write(data)
+            
+            if total_size != 0 and pbar.n != total_size:
+                print("ERROR, something went wrong during download.")
+            else:
+                print(f"'{filename}' downloaded successfully.")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error downloading {filename}: {e}")
+            # Exit or handle the error appropriately if the model is essential
+            return False
+    return True
+
+# --- IMPORTANT: Replace with the actual direct download URL for your model ---
+MODEL_URL = "https://github.com/tanapon010/Project.git/raw/main/asl_rf_model.pkl" #ตัวอย่าง URL
+MODEL_PATH = "asl_rf_model.pkl"
+LABEL_ENCODER_PATH = "label_encoder.pkl"
+
+# Download the model file before attempting to load it
+if not download_file(MODEL_URL, MODEL_PATH):
+    # Handle the case where the download fails (e.g., exit the application)
+    print("Could not download the required model file. Exiting.")
+    exit()
+    
 # โหลดโมเดลและตัวเข้ารหัสป้ายกำกับ (label encoder)
 try:
-    classifier = joblib.load('asl_rf_model.pkl')
-    le = joblib.load('label_encoder.pkl')
-except FileNotFoundError:
-    print("Error: Model files not found. Please make sure 'asl_rf_model.pkl' and 'label_encoder.pkl' are in the same directory.")
+    classifier = joblib.load(MODEL_PATH)
+    le = joblib.load(LABEL_ENCODER_PATH)
+except FileNotFoundError as e:
+    print(f"Error: Could not find model files. Please ensure '{MODEL_PATH}' and '{LABEL_ENCODER_PATH}' are available.")
     classifier = None
     le = None
 
