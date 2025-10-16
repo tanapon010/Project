@@ -1,4 +1,4 @@
-เขาลิ้งนี้ และกดโหลด
+เข้าลิ้งนี้ และกดโหลด
 https://drive.google.com/drive/folders/1Xlmdy_cIafi27kuaZl8Vr3rMwIYEQDZD?usp=sharing
 
 ให้แตกไฟล์ model.zip ก่อนค่อยเปิดใช้งานโปรแกรม
